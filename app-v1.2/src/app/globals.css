@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #eef4ff;
+  --color-brand-100: #dbe7ff;
+  --color-brand-500: #2f6bff;
+  --color-brand-600: #1f55e0;
+  --color-brand-700: #1a45b5;
+  --color-ink: #0f172a;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+html,
+body {
+  background: #f6f7fb;
+  color: var(--color-ink);
+}
+
+@utility card {
+  @apply rounded-2xl bg-white shadow-sm ring-1 ring-slate-200;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-brand-600 text-white hover:bg-brand-700;
+}
+@utility btn-ghost {
+  @apply btn bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50;
+}
+
+@utility input {
+  @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
+}
+@utility label {
+  @apply mb-1 block text-sm font-medium text-slate-700;
+}
+
+@utility chip {
+  @apply inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700;
+}
+
+/* Price pins on the map */
+.price-pin {
+  background: white;
+  border: 2px solid var(--color-brand-600);
+  color: var(--color-brand-700);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-weight: 700;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+  transform: translate(-50%, -50%);
+  display: inline-block;
+}
+.price-pin.active {
+  background: var(--color-brand-600);
+  color: white;
+}
+.campus-pin {
+  background: #0f172a;
+  color: white;
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-weight: 700;
+  font-size: 11px;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  display: inline-block;
+}
+.leaflet-div-icon {
+  background: transparent;
+  border: none;
+}

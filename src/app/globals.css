@@ -1,0 +1,163 @@
+@import "tailwindcss";
+
+/*
+ * Wasatch theme: pine green and sage with a sunset coral accent, mountain
+ * linework, soft rounded cards and pill controls.
+ * Slate is re-tinted toward sage so every existing slate-* class follows the theme.
+ */
+@theme {
+  --color-brand-50: #eef4f0;
+  --color-brand-100: #dce8e1;
+  --color-brand-200: #b9d0c4;
+  --color-brand-500: #3e6f60;
+  --color-brand-600: #24483e;
+  --color-brand-700: #1a362e;
+  --color-brand-800: #142b24;
+  --color-brand-900: #0f211b;
+
+  --color-sunset-50: #fdf2ed;
+  --color-sunset-100: #fbe7df;
+  --color-sunset-500: #e8805e;
+  --color-sunset-600: #d96a46;
+  --color-sunset-800: #8a3b22;
+
+  --color-slate-50: #f5f8f6;
+  --color-slate-100: #eaf1ec;
+  --color-slate-200: #dce6df;
+  --color-slate-300: #c3d2c8;
+  --color-slate-400: #93a69b;
+  --color-slate-500: #62756b;
+  --color-slate-600: #4d6359;
+  --color-slate-700: #33463f;
+  --color-slate-800: #24342e;
+  --color-slate-900: #1d2b26;
+
+  --color-ground: #f3f6f2;
+  --color-ink: #1d2b26;
+
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Sora", "DM Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-soft: 0 1px 0 #dce8e1, 0 18px 40px rgb(36 72 62 / 0.08);
+  --shadow-lift: 0 1px 0 #dce8e1, 0 24px 50px rgb(36 72 62 / 0.14);
+}
+
+html,
+body {
+  background: var(--color-ground);
+  color: var(--color-ink);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+h1.font-extrabold,
+h2.font-extrabold {
+  font-weight: 700;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-sunset-500);
+  outline-offset: 2px;
+}
+
+@utility card {
+  @apply rounded-[28px] bg-white shadow-soft;
+}
+@utility card-inset {
+  @apply rounded-[20px] overflow-hidden;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-brand-600 text-white hover:bg-brand-700;
+}
+@utility btn-ghost {
+  @apply btn bg-white text-brand-600 ring-[1.5px] ring-brand-200 hover:bg-brand-50;
+}
+@utility btn-sunset {
+  @apply btn bg-sunset-500 text-white hover:bg-sunset-600;
+}
+
+@utility input {
+  @apply w-full rounded-2xl border-[1.5px] border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100;
+}
+@utility label {
+  @apply mb-1 block text-sm font-medium text-slate-700;
+}
+
+@utility chip {
+  @apply inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-600;
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* Mountain linework behind the top of every page */
+.ridge {
+  pointer-events: none;
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 260px;
+  overflow: hidden;
+  z-index: 0;
+}
+.ridge svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Price pins on the map */
+.price-pin {
+  background: white;
+  border: 1.5px solid var(--color-brand-200);
+  color: var(--color-brand-600);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgb(36 72 62 / 0.18);
+  transform: translate(-50%, -50%);
+  display: inline-block;
+}
+.price-pin.active {
+  background: var(--color-brand-600);
+  border-color: var(--color-brand-600);
+  color: white;
+}
+.campus-pin {
+  background: var(--color-sunset-500);
+  color: white;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  display: inline-block;
+  box-shadow: 0 6px 16px rgb(217 106 70 / 0.35);
+}
+.leaflet-div-icon {
+  background: transparent;
+  border: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
