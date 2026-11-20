@@ -19,10 +19,10 @@ export async function saveQuiz(fd: FormData) {
     const q = quizQuery(parsePreferences(fd, undefined, QUIZ_FIELDS));
     redirect(`/${view}${q ? `?${q}` : ""}`);
   }
-  linkFormProfile(user);
-  const current = profileForUser(user.id) ?? blankProfile(user);
+  await linkFormProfile(user);
+  const current = (await profileForUser(user.id)) ?? blankProfile(user);
   const prefs = parsePreferences(fd, current, QUIZ_FIELDS);
-  upsertProfile({ ...current, ...prefs, active: 1 }, { userId: user.id });
+  await upsertProfile({ ...current, ...prefs, active: 1 }, { userId: user.id });
   revalidatePath("/", "layout");
   redirect(`/${view}`);
 }
@@ -30,7 +30,7 @@ export async function saveQuiz(fd: FormData) {
 /** The full buyer profile form. */
 export async function saveProfile(_: FormState, fd: FormData): Promise<FormState> {
   const user = await requireUser("/profile");
-  linkFormProfile({ ...user, phone: str(fd, "phone") || user.phone });
+  await linkFormProfile({ ...user, phone: str(fd, "phone") || user.phone });
   const input: ProfileInput = {
     ...parsePreferences(fd),
     name: str(fd, "name") || user.name,
@@ -51,12 +51,12 @@ export async function saveProfile(_: FormState, fd: FormData): Promise<FormState
     return { error: "Add a phone number for text alerts, or pick email." };
   }
   if (!input.move_in) return { error: "Pick a move-in date." };
-  const existing = profileForUser(user.id);
-  upsertProfile(
+  const existing = await profileForUser(user.id);
+  await upsertProfile(
     { ...input, unmatched_like: existing?.unmatched_like, unmatched_avoid: existing?.unmatched_avoid },
     { userId: user.id }
   );
-  if (input.phone && !user.phone) setPhone(user.id, input.phone);
+  if (input.phone && !user.phone) await setPhone(user.id, input.phone);
   revalidatePath("/", "layout");
   redirect("/match?saved=1");
 }

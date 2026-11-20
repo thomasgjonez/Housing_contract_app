@@ -27,20 +27,20 @@ export default async function ListingPage({
 }) {
   const { id } = await params;
   const { posted, matched, alerted } = await searchParams;
-  const l = getListing(Number(id));
+  const l = await getListing(Number(id));
   if (!l) notFound();
-  const photos = getPhotos(l.id);
+  const photos = await getPhotos(l.id);
   const user = await currentUser();
   const isOwner = user && (user.id === l.seller_id || user.is_admin);
-  const seller = publicSeller(l.seller_id);
-  const existing = user ? conversationFor(l.id, user.id) : null;
+  const seller = await publicSeller(l.seller_id);
+  const existing = user ? await conversationFor(l.id, user.id) : null;
   const expired = l.status === "expired";
 
-  const buyers = isOwner ? buyersForListing(l.id) : [];
+  const buyers = isOwner ? await buyersForListing(l.id) : [];
   const strong = buyers.filter((b) => b.match.score >= ALERT_MIN_SCORE).length;
-  const myProfile = user && !isOwner ? profileForUser(user.id) : null;
+  const myProfile = user && !isOwner ? await profileForUser(user.id) : null;
   const myMatch = myProfile ? scoreListing(myProfile, l) : null;
-  if (user && !isOwner) markMatchSeen(user.id, l.id);
+  if (user && !isOwner) await markMatchSeen(user.id, l.id);
   const WD: Record<string, string> = { "in-unit": "In unit", "on-site": "On-site laundry", none: "None" };
 
   const facts: [string, string][] = [
@@ -85,7 +85,7 @@ export default async function ListingPage({
         <div className="hidden grid-rows-2 gap-2 sm:grid">
           {photos.slice(1, 3).map((p) => (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={p} src={`/api/photos/${p}`} alt="" className="h-full w-full rounded-[20px] object-cover" />
+            <img key={p} src={p} alt="" className="h-full w-full rounded-[20px] object-cover" />
           ))}
         </div>
         )}
@@ -94,7 +94,7 @@ export default async function ListingPage({
         <div className="flex gap-2 overflow-x-auto">
           {photos.slice(3).map((p) => (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={p} src={`/api/photos/${p}`} alt="" className="h-24 w-32 shrink-0 rounded-2xl object-cover" />
+            <img key={p} src={p} alt="" className="h-24 w-32 shrink-0 rounded-2xl object-cover" />
           ))}
         </div>
       )}

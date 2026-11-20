@@ -11,13 +11,13 @@ import { str } from "../form";
 export async function contactSeller(fd: FormData) {
   const listingId = Number(str(fd, "listingId"));
   const user = await requireUser(`/listings/${listingId}`);
-  const listing = getListing(listingId);
+  const listing = await getListing(listingId);
   if (!listing || listing.seller_id === user.id) redirect(`/listings/${listingId}`);
-  const convId = startConversation(listingId, user.id, listing.seller_id);
+  const convId = await startConversation(listingId, user.id, listing.seller_id);
   // Save the listing too, so it shows up under Saved.
-  recordSwipe(user.id, listingId, "like");
+  await recordSwipe(user.id, listingId, "like");
   const body = str(fd, "body");
-  if (body) addMessage(convId, user.id, body);
+  if (body) await addMessage(convId, user.id, body);
   redirect(`/inbox/${convId}`);
 }
 
@@ -25,6 +25,6 @@ export async function sendMessage(fd: FormData) {
   const convId = Number(str(fd, "conversationId"));
   const user = await requireUser(`/inbox/${convId}`);
   const body = str(fd, "body");
-  if (body && getConversation(convId, user.id)) addMessage(convId, user.id, body);
+  if (body && (await getConversation(convId, user.id))) await addMessage(convId, user.id, body);
   revalidatePath(`/inbox/${convId}`);
 }

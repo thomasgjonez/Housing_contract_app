@@ -1,5 +1,5 @@
 import "server-only";
-import { db } from "./db";
+import { query } from "./db";
 import type { MatchResult } from "./matching";
 
 // Email and text alerts for new matches.
@@ -23,20 +23,24 @@ function deliverText(_to: string, _body: string): "sent" | "stubbed" {
   return "stubbed";
 }
 
-export function sendMatchAlert(p: Recipient, l: ListingInfo, m: MatchResult) {
+export async function sendMatchAlert(p: Recipient, l: ListingInfo, m: MatchResult) {
   const first = p.name.replace(/^Sample:\s*/, "").split(" ")[0];
   const why = m.reasons.length ? ` ${m.reasons.join(", ")}.` : "";
   const body = `Hi ${first}, a new contract matches what you're looking for (${m.score}% match): ${l.complex}, $${l.rent_monthly}/mo.${why} ${APP_URL}/listings/${l.id}`;
-  const log = db.prepare(
-    "INSERT INTO notifications (profile_id, listing_id, channel, to_address, body, status) VALUES (?, ?, ?, ?, ?, ?)"
-  );
   const channels: ["email" | "text", string | null][] = [];
   if (p.alerts === "email" || p.alerts === "both") channels.push(["email", p.email]);
   if (p.alerts === "text" || p.alerts === "both") channels.push(["text", p.phone]);
   for (const [channel, to] of channels) {
     if (!to) continue;
     const status = channel === "email" ? deliverEmail(to, `New match: ${l.complex}`, body) : deliverText(to, body);
-    log.run(p.id, l.id, channel, to, body, status);
+    await query("INSERT INTO notifications (profile_id, listing_id, channel, to_address, body, status) VALUES ($1, $2, $3, $4, $5, $6)", [
+      p.id,
+      l.id,
+      channel,
+      to,
+      body,
+      status,
+    ]);
     console.log(`[alert ${status}] ${channel} to ${to}: ${body}`);
   }
 }

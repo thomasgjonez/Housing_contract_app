@@ -9,9 +9,10 @@ import { logout } from "@/lib/actions/auth";
 
 export default async function Me() {
   const user = await requireUser("/me");
-  const mine = listingsBySeller(user.id);
-  const saved = likedListings(user.id);
-  const profile = profileForUser(user.id);
+  const mine = await listingsBySeller(user.id);
+  const saved = await likedListings(user.id);
+  const profile = await profileForUser(user.id);
+  const statsById = new Map(await Promise.all(mine.map(async (l) => [l.id, await listingStats(l.id)] as const)));
 
   return (
     <div className="space-y-10">
@@ -47,7 +48,7 @@ export default async function Me() {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {mine.map((l) => {
-              const s = listingStats(l.id);
+              const s = statsById.get(l.id)!;
               return (
                 <div key={l.id} className="space-y-2">
                   <ListingCard l={l} />

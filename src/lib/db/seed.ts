@@ -1,5 +1,5 @@
-import type Database from "better-sqlite3";
 import crypto from "node:crypto";
+import type { Query } from "./index";
 import { resolveComplexNames } from "./schema";
 
 // Map pins are approximate (placed by hand, not geocoded). Fix them on the
@@ -20,7 +20,7 @@ const COMPLEXES: [name: string, lat: number, lng: number][] = [
 
 // Sample listings so the matcher and map are not empty on day one.
 // They show a "Sample" badge; remove them all from the Admin page once real
-// listings come in.
+// listings come in. Only seeded outside production, see seed() below.
 type Sample = {
   complex: string;
   gender: "men" | "women";
@@ -50,60 +50,68 @@ const SAMPLES: Sample[] = [
   { complex: "King Henry", gender: "women", room: "private", rent: 545, start: "2027-05-01", end: "2027-08-15", term: "spring-summer", incentive: "First month $50 off", description: "Spring/Summer private room, pool access." },
 ];
 
-export function seed(db: Database.Database) {
-  const tx = db.transaction(() => {
-    const addComplex = db.prepare(
-      "INSERT INTO complexes (name, lat, lng, byu_approved) VALUES (?, ?, ?, 1)"
-    );
-    const ids = new Map<string, number>();
-    for (const [name, lat, lng] of COMPLEXES) {
-      ids.set(name, Number(addComplex.run(name, lat, lng).lastInsertRowid));
-    }
+async function seedSampleListingsAndBuyers(query: Query, ids: Map<string, number>) {
+  const { rows: seller } = await query<{ id: number }>(
+    "INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id",
+    ["Sample Seller", "samples@provo-contracts.local", "!" + crypto.randomBytes(16).toString("hex")]
+  );
+  const sellerId = seller[0].id;
 
-    // A placeholder seller that owns the sample listings. It cannot log in.
-    const seller = db
-      .prepare("INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)")
-      .run("Sample Seller", "samples@provo-contracts.local", "!" + crypto.randomBytes(16).toString("hex"));
-    const sellerId = Number(seller.lastInsertRowid);
-
-    const addListing = db.prepare(`
-      INSERT INTO listings (seller_id, complex_id, housing_gender, room_type, rent_monthly, deposit,
-        utilities_included, start_date, end_date, contract_term, incentive, parking, description, source)
-      VALUES (?, ?, ?, ?, ?, 150, ?, ?, ?, ?, ?, ?, ?, 'sample')`);
-    for (const s of SAMPLES) {
-      addListing.run(
+  for (const s of SAMPLES) {
+    await query(
+      `INSERT INTO listings (seller_id, complex_id, housing_gender, room_type, rent_monthly, deposit,
+         utilities_included, start_date, end_date, contract_term, incentive, parking, description, source)
+       VALUES ($1, $2, $3, $4, $5, 150, $6, $7, $8, $9, $10, $11, $12, 'sample')`,
+      [
         sellerId, ids.get(s.complex), s.gender, s.room, s.rent, s.utilities ? 1 : 0,
-        s.start, s.end, s.term, s.incentive ?? null, s.parking ? 1 : 0, s.description
-      );
-    }
-    // A few amenities so the matcher has something to tell apart.
-    db.exec(`
-      UPDATE listings SET washer_dryer = 'in-unit' WHERE description LIKE '%washer/dryer in unit%';
-      UPDATE listings SET private_bath = 1 WHERE description LIKE '%own bathroom%';
-      UPDATE listings SET washer_dryer = 'in-unit', private_bath = 1
-        WHERE complex_id IN (SELECT id FROM complexes WHERE name IN ('Belmont', 'Liberty Square')) AND room_type = 'private';
-    `);
+        s.start, s.end, s.term, s.incentive ?? null, s.parking ? 1 : 0, s.description,
+      ]
+    );
+  }
+  // A few amenities so the matcher has something to tell apart.
+  await query(`UPDATE listings SET washer_dryer = 'in-unit' WHERE description LIKE '%washer/dryer in unit%'`);
+  await query(`UPDATE listings SET private_bath = 1 WHERE description LIKE '%own bathroom%'`);
+  await query(
+    `UPDATE listings SET washer_dryer = 'in-unit', private_bath = 1
+     WHERE complex_id IN (SELECT id FROM complexes WHERE name IN ('Belmont', 'Liberty Square')) AND room_type = 'private'`
+  );
 
-    // Sample buyers, shaped like Google Form responses, so a new listing has
-    // someone to match against. "Delete all samples" on Admin removes them.
-    const addBuyer = db.prepare(`
-      INSERT INTO buyer_profiles (source, name, email, phone, contact_method, school, gender, needs_approved,
-        move_in, flex_days, semesters, term, max_rent, room, washer, areas, distance, alerts)
-      VALUES ('form', @name, @email, @phone, @contact, 'BYU', @gender, 'yes', @move_in, @flex, @semesters, @term,
-        @max_rent, @room, @washer, 'Provo', @distance, @alerts)`);
-    const addLike = db.prepare("INSERT INTO buyer_complexes (profile_id, complex_id, kind) VALUES (?, ?, 'like')");
-    const buyers = [
-      { name: "Sample: Kate R.", gender: "women", move_in: "2027-01-02", flex: 7, semesters: "Winter", term: "any", max_rent: 600, room: "private", washer: "in-unit", distance: "walk", like: "Belmont, Glenwood", contact: "Text", alerts: "text" },
-      { name: "Sample: Josh M.", gender: "men", move_in: "2027-01-01", flex: 7, semesters: "Winter", term: "any", max_rent: 400, room: "shared", washer: "any", distance: "any", like: "", contact: "Email", alerts: "email" },
-      { name: "Sample: Emma L.", gender: "women", move_in: "2027-05-01", flex: 21, semesters: "Spring,Summer", term: "spring-summer", max_rent: 550, room: "any", washer: "any", distance: "drive10", like: "Branbury", contact: "Email", alerts: "email" },
-      { name: "Sample: Tyler B.", gender: "men", move_in: "2027-01-01", flex: 14, semesters: "Winter", term: "any", max_rent: 700, room: "private", washer: "in-unit", distance: "walk", like: "Liberty Square", contact: "Text", alerts: "both" },
-    ];
-    buyers.forEach(({ like, ...b }, i) => {
-      const id = Number(
-        addBuyer.run({ ...b, email: `buyer${i + 1}@sample.provo-contracts.local`, phone: `801-555-01${10 + i}` }).lastInsertRowid
-      );
-      for (const complexId of resolveComplexNames(db, like).ids) addLike.run(id, complexId);
-    });
-  });
-  tx();
+  // Sample buyers, shaped like Google Form responses, so a new listing has
+  // someone to match against. "Delete all samples" on Admin removes them.
+  const buyers = [
+    { name: "Sample: Kate R.", gender: "women", move_in: "2027-01-02", flex: 7, semesters: "Winter", term: "any", max_rent: 600, room: "private", washer: "in-unit", distance: "walk", like: "Belmont, Glenwood", contact: "Text", alerts: "text" },
+    { name: "Sample: Josh M.", gender: "men", move_in: "2027-01-01", flex: 7, semesters: "Winter", term: "any", max_rent: 400, room: "shared", washer: "any", distance: "any", like: "", contact: "Email", alerts: "email" },
+    { name: "Sample: Emma L.", gender: "women", move_in: "2027-05-01", flex: 21, semesters: "Spring,Summer", term: "spring-summer", max_rent: 550, room: "any", washer: "any", distance: "drive10", like: "Branbury", contact: "Email", alerts: "email" },
+    { name: "Sample: Tyler B.", gender: "men", move_in: "2027-01-01", flex: 14, semesters: "Winter", term: "any", max_rent: 700, room: "private", washer: "in-unit", distance: "walk", like: "Liberty Square", contact: "Text", alerts: "both" },
+  ];
+  for (const [i, { like, ...b }] of buyers.entries()) {
+    const { rows } = await query<{ id: number }>(
+      `INSERT INTO buyer_profiles (source, name, email, phone, contact_method, school, gender, needs_approved,
+         move_in, flex_days, semesters, term, max_rent, room, washer, areas, distance, alerts)
+       VALUES ('form', $1, $2, $3, $4, 'BYU', $5, 'yes', $6, $7, $8, $9, $10, $11, $12, 'Provo', $13, $14)
+       RETURNING id`,
+      [
+        b.name, `buyer${i + 1}@sample.provo-contracts.local`, `801-555-01${10 + i}`, b.contact,
+        b.gender, b.move_in, b.flex, b.semesters, b.term, b.max_rent, b.room, b.washer, b.distance, b.alerts,
+      ]
+    );
+    const id = rows[0].id;
+    const { ids: likeIds } = await resolveComplexNames(query, like);
+    for (const complexId of likeIds) {
+      await query("INSERT INTO buyer_complexes (profile_id, complex_id, kind) VALUES ($1, $2, 'like') ON CONFLICT DO NOTHING", [id, complexId]);
+    }
+  }
+}
+
+export async function seed(query: Query) {
+  const ids = new Map<string, number>();
+  for (const [name, lat, lng] of COMPLEXES) {
+    const { rows } = await query<{ id: number }>(
+      "INSERT INTO complexes (name, lat, lng, byu_approved) VALUES ($1, $2, $3, 1) RETURNING id",
+      [name, lat, lng]
+    );
+    ids.set(name, rows[0].id);
+  }
+  // Fake listings/buyers would be confusing on the live site.
+  if (process.env.NODE_ENV !== "production") await seedSampleListingsAndBuyers(query, ids);
 }

@@ -5,7 +5,7 @@ import { inbox } from "@/lib/data/chat";
 
 export default async function Inbox() {
   const user = await requireUser("/inbox");
-  const rows = inbox(user.id);
+  const rows = await inbox(user.id);
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">

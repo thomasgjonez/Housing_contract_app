@@ -7,9 +7,9 @@ import { ComplexLocations } from "./ComplexLocations";
 
 export default async function Admin() {
   await requireAdmin();
-  const complexes = allComplexes();
-  const counts = listingCounts();
-  const users = { n: accountCount() };
+  const complexes = await allComplexes();
+  const counts = await listingCounts();
+  const users = { n: await accountCount() };
   const samples = counts.filter((c) => c.source === "sample").reduce((a, c) => a + c.n, 0);
 
   return (

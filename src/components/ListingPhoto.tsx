@@ -10,7 +10,7 @@ const SCENES = [
 export function ListingPhoto({ photo, complex, id, className = "" }: { photo: string | null; complex: string; id: number; className?: string }) {
   if (photo) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={`/api/photos/${photo}`} alt={complex} className={`object-cover ${className}`} draggable={false} />;
+    return <img src={photo} alt={complex} className={`object-cover ${className}`} draggable={false} />;
   }
   const s = SCENES[id % SCENES.length];
   return (

@@ -8,11 +8,11 @@ import { AutoRefresh } from "./AutoRefresh";
 export default async function Conversation({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requireUser(`/inbox/${id}`);
-  const conv = getConversation(Number(id), user.id);
+  const conv = await getConversation(Number(id), user.id);
   if (!conv) notFound();
 
-  markRead(conv.id, user.id);
-  const messages = listMessages(conv.id);
+  await markRead(conv.id, user.id);
+  const messages = await listMessages(conv.id);
   const other = conv.buyer_id === user.id ? conv.seller_name : conv.buyer_name;
 
   return (

@@ -21,11 +21,11 @@ export default async function Match({ searchParams }: { searchParams: Promise<Re
   if (!view) return <PickDefaultView />;
 
   const user = await currentUser();
-  const { prefs, source, profile } = currentPreferences(sp, user);
-  const all = matchListings(prefs, { userId: user?.id });
-  const deck = user ? matchListings(prefs, { userId: user.id, excludeSwiped: true }) : all;
-  const liked = user ? likedIds(user.id) : [];
-  const fresh = user ? newMatchesForUser(user.id).map((m) => m.listing_id) : [];
+  const { prefs, source, profile } = await currentPreferences(sp, user);
+  const all = await matchListings(prefs, { userId: user?.id });
+  const deck = user ? await matchListings(prefs, { userId: user.id, excludeSwiped: true }) : all;
+  const liked = user ? await likedIds(user.id) : [];
+  const fresh = user ? (await newMatchesForUser(user.id)).map((m) => m.listing_id) : [];
 
   // Swipe and Grid share the same preferences (and the same likes).
   const q = source === "url" ? quizQuery(prefs) : "";

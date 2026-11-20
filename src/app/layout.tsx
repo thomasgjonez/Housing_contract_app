@@ -22,7 +22,7 @@ function initials(name: string) {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
-  const unread = user ? unreadCount(user.id) : 0;
+  const unread = user ? await unreadCount(user.id) : 0;
 
   return (
     <html lang="en">

@@ -8,8 +8,8 @@ import { MapView } from "./MapView";
 export default async function MapPage({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const sp = await searchParams;
   const user = await currentUser();
-  const { prefs, source } = currentPreferences(sp, user);
-  const listings = matchListings(prefs, { userId: user?.id });
+  const { prefs, source } = await currentPreferences(sp, user);
+  const listings = await matchListings(prefs, { userId: user?.id });
   return (
     <div>
       <PreferencesBar prefs={prefs} source={source} view="map" count={listings.length} />
