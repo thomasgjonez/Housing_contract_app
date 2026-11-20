@@ -10,11 +10,11 @@ export type PreferenceSource = "url" | "profile" | "none";
  * (a shared link, or someone not signed in) win; otherwise the signed-in
  * buyer's active profile; otherwise nothing, which shows every listing.
  */
-export function currentPreferences(
+export async function currentPreferences(
   sp: Record<string, string | string[] | undefined>,
   user: User | null
-): { prefs: BuyerPreferences; source: PreferenceSource; profile: BuyerProfile | null } {
-  const profile = user ? profileForUser(user.id) : null;
+): Promise<{ prefs: BuyerPreferences; source: PreferenceSource; profile: BuyerProfile | null }> {
+  const profile = user ? await profileForUser(user.id) : null;
   if (hasQuizParams(sp)) return { prefs: parsePreferences(sp, DEFAULT_PREFERENCES, QUIZ_FIELDS), source: "url", profile };
   if (profile?.active) return { prefs: profile, source: "profile", profile };
   return { prefs: DEFAULT_PREFERENCES, source: "none", profile };

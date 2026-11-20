@@ -18,6 +18,6 @@ export default async function Sell() {
       </div>
     );
   }
-  const complexes = complexOptions();
+  const complexes = await complexOptions();
   return <SellForm complexes={complexes} campus={CAMPUS} isAdmin={!!user.is_admin} phone={user.phone ?? ""} />;
 }

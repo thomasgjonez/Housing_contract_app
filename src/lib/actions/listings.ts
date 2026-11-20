@@ -1,8 +1,7 @@
 "use server";
 
 import crypto from "node:crypto";
-import fs from "node:fs";
-import path from "node:path";
+import { put } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { currentUser, requireUser } from "../auth";
@@ -11,7 +10,6 @@ import { matchNewListing } from "../data/buyers";
 import { complexExists, findOrAddComplex } from "../data/complexes";
 import { bump, insertListing, isListingOwner, relist, setStatus } from "../data/listings";
 import { setPhone } from "../data/users";
-import { UPLOAD_DIR } from "../db";
 import { addDays, todayIso } from "../format";
 import { pick, str, type FormState } from "../form";
 
@@ -44,7 +42,7 @@ export async function createListing(_: FormState, fd: FormData): Promise<FormSta
     const lng = Number(str(fd, "lng"));
     if (!name) return { error: "Enter the name of your complex." };
     if (!lat || !lng) return { error: "Tap the map to place your complex." };
-    complexId = findOrAddComplex({
+    complexId = await findOrAddComplex({
       name,
       address: str(fd, "newComplexAddress") || null,
       lat,
@@ -53,7 +51,7 @@ export async function createListing(_: FormState, fd: FormData): Promise<FormSta
       city: str(fd, "newComplexCity") || "Provo",
     });
   }
-  if (!complexId || !complexExists(complexId)) return { error: "Pick your complex." };
+  if (!complexId || !(await complexExists(complexId))) return { error: "Pick your complex." };
 
   const rent = Number(str(fd, "rent"));
   const start = str(fd, "startDate");
@@ -76,11 +74,11 @@ export async function createListing(_: FormState, fd: FormData): Promise<FormSta
   const photoNames: string[] = [];
   for (const f of files) {
     const name = `${crypto.randomBytes(12).toString("hex")}${IMAGE_TYPES[f.type]}`;
-    fs.writeFileSync(path.join(UPLOAD_DIR, name), Buffer.from(await f.arrayBuffer()));
-    photoNames.push(name);
+    const blob = await put(name, Buffer.from(await f.arrayBuffer()), { access: "public" });
+    photoNames.push(blob.url);
   }
 
-  const listingId = insertListing(
+  const listingId = await insertListing(
     {
       seller_id: user.id,
       complex_id: complexId,
@@ -107,10 +105,10 @@ export async function createListing(_: FormState, fd: FormData): Promise<FormSta
   );
 
   const phone = str(fd, "phone");
-  if (phone) setPhone(user.id, phone);
+  if (phone) await setPhone(user.id, phone);
 
   // Check the new listing against every active buyer and alert strong matches.
-  const { matched, alerted } = matchNewListing(listingId);
+  const { matched, alerted } = await matchNewListing(listingId);
 
   revalidatePath("/", "layout");
   redirect(`/listings/${listingId}?posted=1&matched=${matched}&alerted=${alerted}`);
@@ -118,7 +116,7 @@ export async function createListing(_: FormState, fd: FormData): Promise<FormSta
 
 async function ownListing(listingId: number) {
   const user = await requireUser(`/listings/${listingId}`);
-  if (!user.is_admin && !isListingOwner(listingId, user.id)) throw new Error("Not your listing");
+  if (!user.is_admin && !(await isListingOwner(listingId, user.id))) throw new Error("Not your listing");
 }
 
 export async function setListingStatus(fd: FormData) {
@@ -126,15 +124,15 @@ export async function setListingStatus(fd: FormData) {
   const status = str(fd, "status");
   if (status !== "active" && status !== "pending" && status !== "sold") return;
   await ownListing(id);
-  setStatus(id, status);
-  if (status === "active") matchNewListing(id);
+  await setStatus(id, status);
+  if (status === "active") await matchNewListing(id);
   revalidatePath("/", "layout");
 }
 
 export async function bumpListing(fd: FormData) {
   const id = Number(str(fd, "listingId"));
   await ownListing(id);
-  bump(id);
+  await bump(id);
   revalidatePath("/", "layout");
 }
 
@@ -148,8 +146,8 @@ export async function relistListing(_: RelistState, fd: FormData): Promise<Relis
   const end = str(fd, "endDate");
   const dateError = checkDates(start, end);
   if (dateError) return { error: dateError };
-  relist(id, start, end);
-  matchNewListing(id);
+  await relist(id, start, end);
+  await matchNewListing(id);
   revalidatePath("/", "layout");
   redirect(`/listings/${id}`);
 }

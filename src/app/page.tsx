@@ -8,8 +8,8 @@ const STEPS = [
   ["Message the seller", "Chat in the app, then finish the transfer with the complex."],
 ];
 
-export default function Home() {
-  const recent = recentListings(6);
+export default async function Home() {
+  const recent = await recentListings(6);
   return (
     <div className="space-y-14">
       <section className="pt-10 md:pt-16">

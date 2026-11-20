@@ -10,10 +10,10 @@ import { ImportForm } from "./ImportForm";
 
 export default async function Buyers() {
   await requireAdmin();
-  const profiles = allProfiles();
-  const top = topMatchesByProfile(profiles, 3);
-  const outbox = alertOutbox(25);
-  const complexName = new Map(complexOptions().map((c) => [c.id, c.name]));
+  const profiles = await allProfiles();
+  const top = await topMatchesByProfile(profiles, 3);
+  const outbox = await alertOutbox(25);
+  const complexName = new Map((await complexOptions()).map((c) => [c.id, c.name]));
   const names = (ids: number[]) => ids.map((id) => complexName.get(id)).filter(Boolean).join(", ");
   const active = profiles.filter((p) => p.active);
   const noMatch = active.filter((p) => (top.get(p.id)?.count ?? 0) === 0).length;

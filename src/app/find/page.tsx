@@ -8,7 +8,7 @@ import { QuizFields } from "@/components/PreferenceFields";
 export default async function Find({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const sp = await searchParams;
   const user = await currentUser();
-  const profile = user ? profileForUser(user.id) : null;
+  const profile = user ? await profileForUser(user.id) : null;
   // Start from the buyer's profile, then any answers carried in the URL.
   const p = parsePreferences(sp, profile ?? DEFAULT_PREFERENCES, QUIZ_FIELDS);
 

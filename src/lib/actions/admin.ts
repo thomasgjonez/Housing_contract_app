@@ -10,13 +10,13 @@ import { rowsToProfiles } from "../formImport";
 
 export async function moveComplex(complexId: number, lat: number, lng: number) {
   await requireAdmin();
-  moveComplexPin(complexId, lat, lng);
+  await moveComplexPin(complexId, lat, lng);
   revalidatePath("/", "layout");
 }
 
 export async function updateComplex(fd: FormData) {
   await requireAdmin();
-  updateComplexDetails(Number(str(fd, "id")), {
+  await updateComplexDetails(Number(str(fd, "id")), {
     name: str(fd, "name"),
     city: str(fd, "city") || "Provo",
     byu_approved: fd.get("byuApproved") ? 1 : 0,
@@ -28,8 +28,8 @@ export async function updateComplex(fd: FormData) {
 
 export async function deleteSamples() {
   await requireAdmin();
-  deleteSampleListings();
-  deleteSampleBuyers();
+  await deleteSampleListings();
+  await deleteSampleBuyers();
   revalidatePath("/", "layout");
 }
 
@@ -42,13 +42,13 @@ export async function importBuyers(_: ImportState, fd: FormData): Promise<Import
   if (!text) return { error: "Choose the CSV you downloaded from the responses sheet." };
   const { profiles, skipped, missing } = rowsToProfiles(text);
   if (missing.length) return { error: `Couldn't find these columns: ${missing.join(", ")}. Download the responses sheet as CSV.` };
-  const { added, updated } = importFormBuyers(profiles);
+  const { added, updated } = await importFormBuyers(profiles);
   revalidatePath("/admin/buyers");
   return { added, updated, skipped };
 }
 
 export async function setBuyerActive(fd: FormData) {
   await requireAdmin();
-  setProfileActive(Number(str(fd, "id")), str(fd, "active") === "1");
+  await setProfileActive(Number(str(fd, "id")), str(fd, "active") === "1");
   revalidatePath("/admin/buyers");
 }

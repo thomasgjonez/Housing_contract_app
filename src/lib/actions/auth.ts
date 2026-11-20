@@ -15,8 +15,8 @@ export async function signup(_: FormState, fd: FormData): Promise<FormState> {
   if (!name || !email || password.length < 8) {
     return { error: "Enter your name, an email, and a password of at least 8 characters." };
   }
-  if (findUserByEmail(email)) return { error: "That email already has an account. Try logging in." };
-  const id = createUser({
+  if (await findUserByEmail(email)) return { error: "That email already has an account. Try logging in." };
+  const id = await createUser({
     name,
     email,
     password_hash: hashPassword(password),
@@ -24,17 +24,17 @@ export async function signup(_: FormState, fd: FormData): Promise<FormState> {
     is_admin: isAdminEmail(email) ? 1 : 0,
   });
   // Someone who filled out the Google Form gets their answers back.
-  linkFormProfile({ id, email, phone: null });
+  await linkFormProfile({ id, email, phone: null });
   await startSession(id);
   redirect(safeNext(str(fd, "next")));
 }
 
 export async function login(_: FormState, fd: FormData): Promise<FormState> {
-  const user = findUserByEmail(str(fd, "email"));
+  const user = await findUserByEmail(str(fd, "email"));
   if (!user || !checkPassword(str(fd, "password"), user.password_hash)) {
     return { error: "Email or password is wrong." };
   }
-  linkFormProfile(user);
+  await linkFormProfile(user);
   await startSession(user.id);
   redirect(safeNext(str(fd, "next")));
 }

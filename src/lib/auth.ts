@@ -17,7 +17,7 @@ const COOKIE = "session";
 
 export async function startSession(userId: number) {
   const token = crypto.randomBytes(32).toString("hex");
-  createSession(token, userId);
+  await createSession(token, userId);
   (await cookies()).set(COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
@@ -29,14 +29,14 @@ export async function startSession(userId: number) {
 export async function endSession() {
   const jar = await cookies();
   const token = jar.get(COOKIE)?.value;
-  if (token) deleteSession(token);
+  if (token) await deleteSession(token);
   jar.delete(COOKIE);
 }
 
 export async function currentUser(): Promise<User | null> {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
-  return (userForSession(token) as User | undefined) ?? null;
+  return ((await userForSession(token)) as User | undefined) ?? null;
 }
 
 export async function requireUser(next: string): Promise<User> {
