@@ -13,20 +13,27 @@ export type InboxRow = {
 };
 
 export async function inbox(userId: number): Promise<InboxRow[]> {
+  // Postgres only resolves a SELECT-list alias in ORDER BY as a bare name, not
+  // nested inside an expression like coalesce(...) (SQLite allowed that, so
+  // this slipped through the earlier migration untested). Wrapping in a
+  // subquery makes last_at a real output column the outer ORDER BY can use.
   const { rows } = await query<InboxRow>(
-    `SELECT c.id, cx.name AS complex, l.rent_monthly,
-       CASE WHEN c.seller_id = $1 THEN b.name ELSE s.name END AS other_name,
-       (c.seller_id = $1)::int AS i_am_seller,
-       (SELECT body FROM messages WHERE conversation_id = c.id ORDER BY id DESC LIMIT 1) AS last_body,
-       (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY id DESC LIMIT 1) AS last_at,
-       (SELECT count(*) FROM messages WHERE conversation_id = c.id AND sender_id != $1 AND read_at IS NULL) AS unread
-     FROM conversations c
-     JOIN listings l ON l.id = c.listing_id
-     JOIN complexes cx ON cx.id = l.complex_id
-     JOIN users b ON b.id = c.buyer_id
-     JOIN users s ON s.id = c.seller_id
-     WHERE c.buyer_id = $1 OR c.seller_id = $1
-     ORDER BY coalesce(last_at, c.created_at) DESC`,
+    `SELECT * FROM (
+       SELECT c.id, cx.name AS complex, l.rent_monthly,
+         CASE WHEN c.seller_id = $1 THEN b.name ELSE s.name END AS other_name,
+         (c.seller_id = $1)::int AS i_am_seller,
+         (SELECT body FROM messages WHERE conversation_id = c.id ORDER BY id DESC LIMIT 1) AS last_body,
+         (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY id DESC LIMIT 1) AS last_at,
+         (SELECT count(*) FROM messages WHERE conversation_id = c.id AND sender_id != $1 AND read_at IS NULL) AS unread,
+         c.created_at AS conv_created_at
+       FROM conversations c
+       JOIN listings l ON l.id = c.listing_id
+       JOIN complexes cx ON cx.id = l.complex_id
+       JOIN users b ON b.id = c.buyer_id
+       JOIN users s ON s.id = c.seller_id
+       WHERE c.buyer_id = $1 OR c.seller_id = $1
+     ) t
+     ORDER BY coalesce(last_at, conv_created_at) DESC`,
     [userId]
   );
   return rows;
@@ -70,12 +77,48 @@ export async function startConversation(listingId: number, buyerId: number, sell
   return (await conversationFor(listingId, buyerId))!.id;
 }
 
-export async function messages(conversationId: number) {
-  const { rows } = await query<{ id: number; sender_id: number; body: string; created_at: string }>(
-    "SELECT id, sender_id, body, created_at FROM messages WHERE conversation_id = $1 ORDER BY id",
+export type Message = { id: number; sender_id: number; body: string; created_at: string; read_at: string | null };
+
+export async function messages(conversationId: number): Promise<Message[]> {
+  const { rows } = await query<Message>(
+    "SELECT id, sender_id, body, created_at, read_at FROM messages WHERE conversation_id = $1 ORDER BY id",
     [conversationId]
   );
   return rows;
+}
+
+/** Messages added since (not including) afterId, for polling. */
+export async function messagesSince(conversationId: number, afterId: number): Promise<Message[]> {
+  const { rows } = await query<Message>(
+    "SELECT id, sender_id, body, created_at, read_at FROM messages WHERE conversation_id = $1 AND id > $2 ORDER BY id",
+    [conversationId, afterId]
+  );
+  return rows;
+}
+
+/** The user's own most recent message in the conversation, and whether it's been read. */
+export async function myLastMessageSeen(conversationId: number, userId: number) {
+  const { rows } = await query<{ id: number; read_at: string | null }>(
+    "SELECT id, read_at FROM messages WHERE conversation_id = $1 AND sender_id = $2 ORDER BY id DESC LIMIT 1",
+    [conversationId, userId]
+  );
+  return rows[0] ? { id: rows[0].id, seen: rows[0].read_at !== null } : null;
+}
+
+/** The newest message sent to this user across all their conversations, for the new-message toast. */
+export async function latestIncomingMessage(userId: number) {
+  const { rows } = await query<{ id: number; conversation_id: number; body: string; other_name: string }>(
+    `SELECT m.id, m.conversation_id, m.body,
+       CASE WHEN c.seller_id = $1 THEN b.name ELSE s.name END AS other_name
+     FROM messages m
+     JOIN conversations c ON c.id = m.conversation_id
+     JOIN users b ON b.id = c.buyer_id
+     JOIN users s ON s.id = c.seller_id
+     WHERE (c.buyer_id = $1 OR c.seller_id = $1) AND m.sender_id != $1
+     ORDER BY m.id DESC LIMIT 1`,
+    [userId]
+  );
+  return rows[0] ?? null;
 }
 
 export async function addMessage(conversationId: number, senderId: number, body: string) {
