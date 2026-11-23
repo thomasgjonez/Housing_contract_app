@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconChat, IconHeart, IconMap, IconPlus, IconUser } from "./Icons";
+import { useUnread } from "./ChatLive";
 
 const TABS = [
   { href: "/match", label: "Match", Icon: IconHeart },
@@ -23,8 +24,9 @@ function Unread({ n, className }: { n: number; className: string }) {
 }
 
 /** Pill nav in the header on laptops. */
-export function TopTabs({ unread, isAdmin }: { unread: number; isAdmin: boolean }) {
+export function TopTabs({ isAdmin }: { isAdmin: boolean }) {
   const active = useActive();
+  const unread = useUnread();
   const tabs = isAdmin ? [...TABS, { href: "/admin", label: "Admin", Icon: IconUser }] : TABS;
   return (
     <nav className="hidden items-center gap-1 rounded-full bg-white/80 p-1 text-sm font-medium shadow-soft backdrop-blur md:flex">
@@ -44,8 +46,9 @@ export function TopTabs({ unread, isAdmin }: { unread: number; isAdmin: boolean 
 }
 
 /** Floating pill tab bar on phones. */
-export function BottomTabs({ unread }: { unread: number }) {
+export function BottomTabs() {
   const active = useActive();
+  const unread = useUnread();
   return (
     <nav
       className="fixed inset-x-3 z-[1000] grid grid-cols-5 gap-1 rounded-full bg-brand-600 p-1.5 shadow-lift md:hidden"
