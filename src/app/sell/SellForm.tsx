@@ -121,6 +121,13 @@ export function SellForm({
             </select>
           </label>
         </div>
+        <label className="block">
+          <span className="label">Contracts available</span>
+          <select name="contractsAvailable" defaultValue="1" className="input">
+            {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n === 6 ? "6+" : n}</option>)}
+          </select>
+          <span className="mt-1 block text-xs text-slate-500">More than 1 if you&apos;re selling together with a roommate.</span>
+        </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
             <span className="label">Bathroom</span>

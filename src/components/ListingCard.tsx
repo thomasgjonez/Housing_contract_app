@@ -18,6 +18,7 @@ export type CardListing = {
   incentive: string | null;
   status: string;
   source: string;
+  contracts_available: number;
 };
 
 export function StatusBadge({ status, source }: { status: string; source: string }) {
@@ -48,6 +49,15 @@ export function IncentivePill({ text }: { text: string }) {
   );
 }
 
+export function ContractsPill({ n }: { n: number }) {
+  if (n <= 1) return null;
+  return (
+    <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
+      {n} contracts available
+    </span>
+  );
+}
+
 export function ListingCard({ l }: { l: CardListing }) {
   return (
     <Link href={`/listings/${l.id}`} className="card group block p-2.5 transition hover:-translate-y-0.5 hover:shadow-lift">
@@ -70,6 +80,7 @@ export function ListingCard({ l }: { l: CardListing }) {
         <div className="flex flex-wrap gap-1.5">
           <DatesPill start={l.start_date} end={l.end_date} term={l.contract_term} />
           {l.incentive && <IncentivePill text={l.incentive} />}
+          <ContractsPill n={l.contracts_available} />
         </div>
       </div>
     </Link>

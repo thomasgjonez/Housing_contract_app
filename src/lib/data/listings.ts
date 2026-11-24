@@ -33,6 +33,7 @@ export type Listing = {
   washer_dryer: string;
   private_bath: number;
   pets_allowed: number;
+  contracts_available: number;
   city: string;
   walk_minutes: number;
 };
@@ -189,6 +190,7 @@ export type NewListing = {
   washer_dryer: string;
   private_bath: number;
   pets_allowed: number;
+  contracts_available: number;
 };
 
 export async function insertListing(l: NewListing, photos: string[]) {

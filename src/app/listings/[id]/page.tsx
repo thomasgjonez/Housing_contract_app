@@ -59,6 +59,7 @@ export default async function ListingPage({
     ["BYU-approved", l.byu_approved ? "Yes" : "No"],
   ];
   if (l.unit) facts.splice(4, 0, ["Unit", l.unit]);
+  if (l.contracts_available > 1) facts.splice(5, 0, ["Contracts", `${l.contracts_available} available`]);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">

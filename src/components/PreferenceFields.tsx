@@ -124,6 +124,17 @@ export function ParkingField({ p }: P) {
   );
 }
 
+export function ContractsNeededField({ p }: P) {
+  return (
+    <label className="block">
+      <span className="label">Contracts needed</span>
+      <select name="contracts_needed" defaultValue={p.contracts_needed} className="input">
+        {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n === 6 ? "6+" : n}</option>)}
+      </select>
+    </label>
+  );
+}
+
 /** The short quiz: the first questions of the profile. */
 export function QuizFields({ p }: P) {
   return (
@@ -137,6 +148,7 @@ export function QuizFields({ p }: P) {
       </div>
       <DistanceField p={p} />
       <ApprovedField p={p} />
+      <ContractsNeededField p={p} />
     </>
   );
 }

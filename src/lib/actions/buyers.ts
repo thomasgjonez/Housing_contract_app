@@ -39,7 +39,6 @@ export async function saveProfile(_: FormState, fd: FormData): Promise<FormState
     social: str(fd, "social") || null,
     contact_method: str(fd, "contact_method") || null,
     school: str(fd, "school") || null,
-    contracts_needed: Math.max(1, Math.min(6, Number(str(fd, "contracts_needed")) || 1)),
     group_pref: pick(str(fd, "group_pref"), ["solo", "same-unit", "same-complex"] as const, "solo"),
     takeover_ok: "yes",
     notes: str(fd, "notes") || null,
