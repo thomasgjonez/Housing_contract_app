@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS listings (
   washer_dryer TEXT NOT NULL DEFAULT 'on-site',
   private_bath INTEGER NOT NULL DEFAULT 0,
   pets_allowed INTEGER NOT NULL DEFAULT 0,
+  contracts_available INTEGER NOT NULL DEFAULT 1,
   description TEXT,
   contact_note TEXT,
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('draft','active','pending','sold','expired')),
@@ -230,6 +231,10 @@ const MIGRATIONS: ((query: Query) => Promise<void>)[] = [
         r.id,
       ]);
     }
+  },
+  // 3: v1.3 sellers can bundle more than one contract into a listing.
+  async (query) => {
+    await addColumn(query, "listings", "contracts_available", "INTEGER NOT NULL DEFAULT 1");
   },
 ];
 

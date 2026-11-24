@@ -30,6 +30,7 @@ export type MatchableListing = {
   private_bath?: number;
   pets_allowed?: number;
   walk_minutes: number;
+  contracts_available?: number;
 };
 
 export type MatchResult = { score: number; reasons: string[]; breakdown: Record<string, number> };
@@ -107,6 +108,7 @@ export function dealbreaker(p: BuyerPreferences, l: MatchableListing): string | 
   if (p.furnished === "must" && l.furnished === 0) return "furnished";
   if (p.parking !== "none" && !l.parking) return "parking";
   if (p.pets === "pet" && !l.pets_allowed) return "pets";
+  if (p.contracts_needed > 1 && (l.contracts_available ?? 1) < p.contracts_needed) return "contracts";
   if (p.move_in) {
     // Available by the move-in date (give or take the buyer's flexibility)
     // and at least a month left on the contract after it.
@@ -190,8 +192,12 @@ export function scoreListing(p: BuyerPreferences, l: MatchableListing, ctx: Matc
   if (l.incentive) reasons.push([65, l.incentive]);
   if (l.parking && p.parking === "none") reasons.push([10, "Parking included"]);
 
+  const fitsGroup = p.contracts_needed > 1 && (l.contracts_available ?? 1) >= p.contracts_needed;
+  if (fitsGroup) reasons.push([85, `Fits your group of ${p.contracts_needed} in one unit`]);
+
   let score = Object.values(b).reduce((a, n) => a + n, 0);
   if (l.incentive) score += 3;
+  if (fitsGroup) score += 5;
   score = Math.min(100, Math.round(score));
   for (const k of Object.keys(b)) b[k] = Math.round(b[k]);
 

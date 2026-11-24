@@ -5,8 +5,8 @@ import { saveProfile } from "@/lib/actions/buyers";
 import type { BuyerProfile } from "@/lib/data/buyers";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences";
 import {
-  AmenityFields, ApprovedField, AreasField, Choice, ComplexesField, DistanceField, FlexField, GenderField,
-  ParkingField, PetsField, RentAndMoveInFields, RoomField, Row, SemestersField, TermField,
+  AmenityFields, ApprovedField, AreasField, Choice, ComplexesField, ContractsNeededField, DistanceField, FlexField,
+  GenderField, ParkingField, PetsField, RentAndMoveInFields, RoomField, Row, SemestersField, TermField,
 } from "@/components/PreferenceFields";
 
 export function ProfileForm({
@@ -68,12 +68,7 @@ export function ProfileForm({
           </label>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <label>
-            <span className="label">Contracts needed</span>
-            <select name="contracts_needed" defaultValue={p?.contracts_needed ?? 1} className="input">
-              {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n === 6 ? "6+" : n}</option>)}
-            </select>
-          </label>
+          <ContractsNeededField p={prefs} />
           <label>
             <span className="label">With a group?</span>
             <select name="group_pref" defaultValue={p?.group_pref ?? "solo"} className="input">

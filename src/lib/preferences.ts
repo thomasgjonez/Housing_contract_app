@@ -25,6 +25,7 @@ export type BuyerPreferences = {
   avoid_ids: number[]; // complex ids
   parking: "need" | "covered" | "none";
   pets: "pet" | "esa" | "none";
+  contracts_needed: number; // 1-6, how many contracts this buyer (and their group) need
 };
 
 export const DEFAULT_PREFERENCES: BuyerPreferences = {
@@ -46,11 +47,12 @@ export const DEFAULT_PREFERENCES: BuyerPreferences = {
   avoid_ids: [],
   parking: "none",
   pets: "none",
+  contracts_needed: 1,
 };
 
 /** The short version of the profile. These go in the URL for shared links. */
 export const QUIZ_FIELDS = [
-  "gender", "room", "max_rent", "move_in", "term", "distance", "parking", "needs_approved",
+  "gender", "room", "max_rent", "move_in", "term", "distance", "parking", "needs_approved", "contracts_needed",
 ] as const satisfies readonly (keyof BuyerPreferences)[];
 
 export const OPTIONS = {
@@ -115,6 +117,8 @@ export function parsePreferences(
   set("move_in", moveIn && /^\d{4}-\d{2}-\d{2}$/.test(moveIn) ? moveIn : null);
   const flex = Number(first("flex_days"));
   set("flex_days", FLEX_OPTIONS.includes(flex) ? flex : DEFAULT_PREFERENCES.flex_days);
+  const contracts = Number(first("contracts_needed"));
+  set("contracts_needed", Number.isInteger(contracts) && contracts >= 1 ? Math.min(6, contracts) : DEFAULT_PREFERENCES.contracts_needed);
   set("semesters", getAll(src, "semesters").filter((s) => SEMESTERS.includes(s)));
   set("areas", getAll(src, "areas"));
   const ids = (k: string) => [...new Set(getAll(src, k).map(Number).filter((n) => Number.isInteger(n) && n > 0))];
@@ -151,5 +155,6 @@ export function preferenceChips(p: BuyerPreferences): string[] {
   if (p.distance === "drive20") chips.push("≤ 20 min drive");
   if (p.parking !== "none") chips.push(p.parking === "covered" ? "Covered parking" : "Parking");
   if (p.washer === "in-unit") chips.push("W/D in unit");
+  if (p.contracts_needed > 1) chips.push(`Needs ${p.contracts_needed} contracts`);
   return chips;
 }

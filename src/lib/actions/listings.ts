@@ -100,6 +100,7 @@ export async function createListing(_: FormState, fd: FormData): Promise<FormSta
       washer_dryer: pick(str(fd, "washer"), ["in-unit", "on-site", "none"] as const, "on-site"),
       private_bath: str(fd, "bath") === "private" ? 1 : 0,
       pets_allowed: fd.get("pets") ? 1 : 0,
+      contracts_available: Math.max(1, Math.min(6, Number(str(fd, "contractsAvailable")) || 1)),
     },
     photoNames
   );

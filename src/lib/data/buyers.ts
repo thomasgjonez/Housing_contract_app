@@ -14,7 +14,6 @@ export type BuyerContact = {
   social: string | null;
   contact_method: string | null;
   school: string | null;
-  contracts_needed: number;
   group_pref: string;
   takeover_ok: string;
   notes: string | null;
@@ -135,7 +134,6 @@ export function blankProfile(user: { name: string; email: string; phone: string 
     social: null,
     contact_method: null,
     school: null,
-    contracts_needed: 1,
     group_pref: "solo",
     takeover_ok: "yes",
     notes: null,
