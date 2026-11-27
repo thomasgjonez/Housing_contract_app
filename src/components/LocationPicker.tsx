@@ -26,7 +26,10 @@ export default function LocationPicker({
   return (
     <div className={`${height} overflow-hidden rounded-2xl`}>
       <MapContainer center={value ? [value.lat, value.lng] : [center.lat, center.lng]} zoom={15} className="h-full w-full">
-        <TileLayer attribution="&copy; OpenStreetMap contributors &copy; CARTO" url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+        <TileLayer
+          attribution="&copy; OpenStreetMap contributors &copy; CARTO"
+          url={`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${process.env.NEXT_PUBLIC_CARTO_API_KEY}`}
+        />
         <ClickHandler onChange={onChange} />
         {value && <Marker position={[value.lat, value.lng]} icon={dot} />}
       </MapContainer>

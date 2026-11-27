@@ -27,7 +27,7 @@ export default function LeafletMap({
     <MapContainer center={[campus.lat - 0.004, campus.lng - 0.005]} zoom={15} className="h-full w-full" scrollWheelZoom>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+        url={`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${process.env.NEXT_PUBLIC_CARTO_API_KEY}`}
       />
       <Marker position={[campus.lat, campus.lng]} icon={campusIcon} interactive={false} />
       {pins.map((p) => (
